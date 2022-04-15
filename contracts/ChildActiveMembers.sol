@@ -203,6 +203,9 @@ contract ChildActiveMembers is
     // }
 
     function claim(bytes32[] calldata _merkleProof) external {
+        // normally the require would be needed for a child mitable token
+        // however here it's not needed due to the whitelist functionailty
+
         // require(
         //     !withdrawnTokens[tokenId],
         //     "ChildMintableERC721: TOKEN_EXISTS_ON_ROOT_CHAIN"
