@@ -1,32 +1,45 @@
-import fs from 'fs'
-import path from 'path'
-import { NFTStorage, File } from 'nft.storage'
-import dotenv from 'dotenv';
+const fs = require('fs')
+const { NFTStorage, File } = require('nft.storage')
+const dotenv = require('dotenv');
 dotenv.config();
 
-async function main() {
-  const storage = new NFTStorage({ token: process.env.NFT_STORAGE_API_KEY });
+async function uploadData(baseFileName, isJPG) {
 
-  const directory = [];
+  let imgType
+  if (isJPG)
+    imgType = 'jpg'
+  else
+    imgType = 'png'
 
-  for (const id of Array.from(Array(5).keys())) {
-    const fileData = fs.readFileSync(`./assets/og_token.gif`)
-    const imageFile = new File([fileData], `W3B_OG_TOKEN-${id}.gif`, { type: 'image/gif'});
-    const image = await storage.storeBlob(imageFile);
+  const client = new NFTStorage({ token: process.env.NFT_STORAGE_API_KEY });
 
-    const metadata = {
-      name: `Web3 Builders Munich Early Member #${id}`,
-      description: "This token represents proof of early member status of the Web3 Builders Munich community",
-      image: `ipfs://${image}`,
-    }
+  console.log('Uploding image...');
+  const imageData = fs.readFileSync(`./assets/${baseFileName}.${imgType}`)
+  const imageFile = new File([imageData], `${baseFileName}.${imgType}`, { type: `image/${imgType}` });
+  const imageCID = await client.storeBlob(imageFile);
 
-    directory.push(
-      new File([JSON.stringify(metadata, null, 2)], `${id}`)
-    )
+  console.log('Uploding mp4...');
+  const animationData = fs.readFileSync(`./assets/${baseFileName}.mp4`)
+  const animationFile = new File([animationData], `${baseFileName}.mp4`, { type: ' video/mp4' });
+  const animationCID = await client.storeBlob(animationFile);
+
+
+  return {
+    imageCID,
+    animationCID
   }
 
-  const pinnedDir = await storage.storeDirectory(directory);
-  console.warn(pinnedDir)
+}
+
+async function main() {
+  const { imageCID, animationCID } = await uploadData('active_members_badge', false)
+
+  console.log('================================================');
+  console.log(`Image CID: ${imageCID}`)
+  console.log(`Animation CID: ${animationCID}`)
+  console.log('Put those two hashes in the argument.js file');
+  console.log('================================================');
+
 
 }
 main()

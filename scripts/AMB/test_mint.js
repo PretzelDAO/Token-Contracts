@@ -3,17 +3,16 @@ const { ethers } = require("hardhat");
 const { MerkleTree } = require('merkletreejs')
 const keccak256 = require('keccak256')
 
-const ALLOW_LIST = [
-    '0x56512613DbF01D92F69dAC490aC9d4C03Fd12c39'
-]
-
+const AL = require('../../AL')
 
 async function main() {
+    const allowList = AL
+
     const account = await ethers.getSigner()
     const address = account.address
     console.log(address);
 
-    const leafNodes = ALLOW_LIST.map(addr => keccak256(addr));
+    const leafNodes = allowList.map(addr => keccak256(addr));
     const merkleTree = new MerkleTree(leafNodes, keccak256, { sortPairs: true });
     // const merkleRoot = merkleTree.getRoot();
 
@@ -22,14 +21,17 @@ async function main() {
 
     const Contract = await ethers.getContractFactory('ChildActiveMembersBadge');
 
-    const contract = Contract.attach('0x6B6A19bF71B4eB587C00069a5901fCb457629cFe')
+    const contract = Contract.attach('0x2b98AD929Ee80d23902d27d1A9A9549D4b067448')
 
-    // const tx = await contract.claim(merkleProof)
+    const tx = await contract.claim(merkleProof, {
+        gasLimit: 500000
+    })
+    await tx.wait()
 
     console.log(await contract.balanceOf(address));
 
-    console.log(await contract.tokenURI(0));
     console.log(await contract.tokenURI(1));
+    // console.log(await contract.tokenURI(0));
 
 }
 
