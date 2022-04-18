@@ -58,7 +58,7 @@ contract BaseActiveMembersBadge is
      */
     function pauseMembership(address member) external {
         require(
-            _msgSender() == member || hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
+            _msgSender() == member || hasRole(PAUSER_ROLE, _msgSender()),
             "The sender needs to be either an Admin or own the membership badge."
         );
         // token ids start at 1 so an id of 0 means that the member does not have a paused token.
@@ -77,7 +77,7 @@ contract BaseActiveMembersBadge is
 
     function unpauseMembership(address previousMember)
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(PAUSER_ROLE)
     {
         require(
             pausedMembershipTokens[previousMember] > 0,
