@@ -215,7 +215,7 @@ contract ChildActiveMembersBadge is BaseActiveMembersBadge {
         _safeMint(to, tokenId);
     }
 
-    function updateMerkleRoot(bytes32 newMerkleRoot)
+    function setMerkleRoot(bytes32 newMerkleRoot)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {

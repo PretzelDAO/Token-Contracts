@@ -88,7 +88,7 @@ contract BaseActiveMembersBadge is
         pausedMembershipTokens[previousMember] = 0;
 
         // interactions
-        safeTransferFrom(address(this), previousMember, tokenId);
+        _transfer(address(this), previousMember, tokenId);
     }
 
     function tokenURI(uint256 tokenId)
