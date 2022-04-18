@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
@@ -13,6 +14,7 @@ import {Base64} from "../libraries/Base64.sol";
 
 contract BaseActiveMembersBadge is
     ERC721,
+    Pausable,
     ERC721Enumerable,
     AccessControl,
     EIP712,
@@ -21,16 +23,23 @@ contract BaseActiveMembersBadge is
     using Base64 for bytes;
     using Strings for uint256;
 
+    // ==== stuff for token metadata
     string public constant NAME = "Active Members Badge";
     string public constant SYMBOL = "AMB";
     string public constant DESCRIPTION =
         "This NFT represents proof that the current owner is an active member of the PretzelDAO. LFB!";
-
-    string public constant SIGNING_DOMAIN_VERSION = "1";
-
-    mapping(address => uint256) public pausedMembershipTokens;
     string public imageCID;
     string public animationCID;
+    // END
+
+    // for voting
+    string public constant SIGNING_DOMAIN_VERSION = "1";
+
+    // for pausing general token transfers
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+
+    // for pausing membership of a particular member
+    mapping(address => uint256) public pausedMembershipTokens;
 
     constructor(string memory _imageCID, string memory _animationCID)
         ERC721(NAME, SYMBOL)
@@ -40,9 +49,14 @@ contract BaseActiveMembersBadge is
         animationCID = _animationCID;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(PAUSER_ROLE, _msgSender());
     }
 
-    function pauseMembership(address member) public {
+    /**
+     * @notice this assumes that address only ever have one badge
+     * @param member address of the member to pause the membership for
+     */
+    function pauseMembership(address member) external {
         require(
             _msgSender() == member || hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
             "The sender needs to be either an Admin or own the membership badge."
@@ -62,7 +76,7 @@ contract BaseActiveMembersBadge is
     }
 
     function unpauseMembership(address previousMember)
-        public
+        external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         require(
@@ -107,11 +121,19 @@ contract BaseActiveMembersBadge is
         return string(abi.encodePacked("data:application/json;base64,", json));
     }
 
+    function pause() public onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    function unpause() public onlyRole(PAUSER_ROLE) {
+        _unpause();
+    }
+
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256 tokenId
-    ) internal override(ERC721, ERC721Enumerable) {
+    ) internal override(ERC721, ERC721Enumerable) whenNotPaused {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
