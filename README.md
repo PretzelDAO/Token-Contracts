@@ -1,4 +1,4 @@
-This repo was migrated from the original Web3 Builder Organization [Web3 Builder Organization](https://github.com/MunichWeb3Builders/OG_NFT_SUGGESTION_1)
+This repo was migrated from the original [Web3 Builder Organization](https://github.com/MunichWeb3Builders/OG_NFT_SUGGESTION_1)
 
 ## Overview
 This is the first project of the Web3 Builders Munich DAO. It allows early members to mint an OG NFT.
