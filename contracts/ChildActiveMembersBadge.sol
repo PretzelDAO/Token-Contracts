@@ -1,27 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-
-import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
+import "./BaseActiveMembersBadge.sol";
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {Base64} from "../libraries/Base64.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-contract ChildActiveMembers is
-    ERC721,
-    ERC721Enumerable,
-    AccessControl,
-    EIP712,
-    ERC721Votes
-{
+contract ChildActiveMembersBadge is BaseActiveMembersBadge {
     using Counters for Counters.Counter;
-    using Base64 for bytes;
     using Strings for uint256;
 
     // Stuff needed for Polygon mintable assets
@@ -33,40 +20,30 @@ contract ChildActiveMembers is
     uint256 public constant BATCH_LIMIT = 20;
 
     event WithdrawnBatch(address indexed user, uint256[] tokenIds);
-    // event TransferWithMetadata(
-    //     address indexed from,
-    //     address indexed to,
-    //     uint256 indexed tokenId,
-    //     bytes metaData
-    // );
+    event TransferWithMetadata(
+        address indexed from,
+        address indexed to,
+        uint256 indexed tokenId,
+        bytes metaData
+    );
 
     // END
 
-    string public constant NAME = "Active Members Badge";
-    string public constant SYMBOL = "AMB";
-    string public constant DESCRIPTION =
-        "This NFT represents proof that the current owner is an active member of the PretzelDAO. LFB!";
-
-    string public constant SIGNING_DOMAIN_VERSION = "1";
-
+    // Needed for minting
     Counters.Counter private _tokenIdCounter;
     bytes32 public merkleRoot;
-    mapping(address => bool) public whitelistClaimed;
-    string public imageCID;
-    string public animationCID;
+    mapping(address => bool) public allowlistClaimed;
 
-    constructor(
-        string memory _imageCID,
-        string memory _animationCID,
-        bytes32 _merkleRoot
-    ) ERC721(NAME, SYMBOL) EIP712(NAME, SIGNING_DOMAIN_VERSION) {
-        imageCID = _imageCID;
-        animationCID = _animationCID;
-        merkleRoot = _merkleRoot;
+    // END
 
-        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    constructor(string memory _imageCID, string memory _animationCID)
+        BaseActiveMembersBadge(_imageCID, _animationCID)
+    {
         _grantRole(DEPOSITOR_ROLE, _msgSender());
     }
+
+    // ==================================================================================
+    // functions needed for briding functionality
 
     /**
      * @notice called when token is deposited on root chain
@@ -169,12 +146,12 @@ contract ChildActiveMembers is
         // still I keep function for compatability
 
         // Encoding metadata associated with tokenId & emitting event
-        // emit TransferWithMetadata(
-        //     ownerOf(tokenId),
-        //     address(0),
-        //     tokenId,
-        //     this.encodeTokenMetadata(tokenId)
-        // );
+        emit TransferWithMetadata(
+            ownerOf(tokenId),
+            address(0),
+            tokenId,
+            this.encodeTokenMetadata(tokenId)
+        );
 
         _burn(tokenId);
     }
@@ -190,17 +167,20 @@ contract ChildActiveMembers is
      * @param tokenId Token for which URI to be fetched
      */
 
-    // function encodeTokenMetadata(uint256 tokenId)
-    //     external
-    //     view
-    //     virtual
-    //     returns (bytes memory)
-    // {
-    //     // You're always free to change this default implementation
-    //     // and pack more data in byte array which can be decoded back
-    //     // in L1
-    //     return abi.encode(tokenURI(tokenId));
-    // }
+    function encodeTokenMetadata(uint256 tokenId)
+        external
+        view
+        virtual
+        returns (bytes memory)
+    {
+        // You're always free to change this default implementation
+        // and pack more data in byte array which can be decoded back
+        // in L1
+        return abi.encode(tokenURI(tokenId));
+    }
+
+    // END
+    // =======================================================================================
 
     function claim(bytes32[] calldata _merkleProof) external {
         // normally the require would be needed for a child mitable token
@@ -211,7 +191,7 @@ contract ChildActiveMembers is
         //     "ChildMintableERC721: TOKEN_EXISTS_ON_ROOT_CHAIN"
         // );
         require(
-            !whitelistClaimed[_msgSender()],
+            !allowlistClaimed[_msgSender()],
             "Address has already claimed."
         );
         bytes32 leaf = keccak256(abi.encodePacked(_msgSender()));
@@ -219,7 +199,7 @@ contract ChildActiveMembers is
             MerkleProof.verify(_merkleProof, merkleRoot, leaf),
             "Proof invalid."
         );
-        whitelistClaimed[_msgSender()] = true;
+        allowlistClaimed[_msgSender()] = true;
 
         safeMint(_msgSender());
 
@@ -227,34 +207,12 @@ contract ChildActiveMembers is
         delegate(_msgSender());
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override
-        returns (string memory)
-    {
-        require(
-            _exists(tokenId),
-            "ERC721URIStorage: URI query for nonexistent token"
-        );
-        string memory json = abi
-            .encodePacked(
-                '{"name": "',
-                NAME,
-                " #",
-                tokenId.toString(),
-                '",',
-                '"description": "',
-                DESCRIPTION,
-                '", "image": "ipfs://',
-                imageCID,
-                '", "animation_url": "ipfs://',
-                animationCID,
-                '"}'
-            )
-            .encode(); // this encodes to Base64
-
-        return string(abi.encodePacked("data:application/json;base64,", json));
+    function safeMint(address to) private {
+        // Let's increment the counter first
+        // so token IDs start at 1
+        _tokenIdCounter.increment();
+        uint256 tokenId = _tokenIdCounter.current();
+        _safeMint(to, tokenId);
     }
 
     function updateMerkleRoot(bytes32 newMerkleRoot)
@@ -262,37 +220,5 @@ contract ChildActiveMembers is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         merkleRoot = newMerkleRoot;
-    }
-
-    function safeMint(address to) private {
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
-    }
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal override(ERC721, ERC721Enumerable) {
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
-
-    function _afterTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal override(ERC721, ERC721Votes) {
-        super._afterTokenTransfer(from, to, tokenId);
-    }
-
-    // The following functions are overrides required by Solidity.
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721Enumerable, AccessControl)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
     }
 }

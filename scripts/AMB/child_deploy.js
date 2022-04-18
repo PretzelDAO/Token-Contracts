@@ -63,7 +63,7 @@ async function main() {
     const animationCID = 'b'
 
     console.log('deploying...');
-    const Contract = await ethers.getContractFactory('ChildActiveMembers');
+    const Contract = await ethers.getContractFactory('ChildActiveMembersBadge');
     const contract = await Contract.deploy(imageCID, animationCID, merkleRoot);
 
     await contract.deployed();
