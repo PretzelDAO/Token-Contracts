@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {Base64} from "../libraries/Base64.sol";
+import {Base64} from "../../libraries/Base64.sol";
 
 contract BaseActiveMembersBadge is
     ERC721,
