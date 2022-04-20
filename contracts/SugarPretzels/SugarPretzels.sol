@@ -7,7 +7,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
-contract SugarPretzels is ERC721, ERC721Enumerable, Ownable, ERC2771Context {
+import "../../interfaces/Polygon/IChildMintableERC721.sol";
+
+contract SugarPretzels is
+    ERC721,
+    ERC721Enumerable,
+    IChildMintableERC721,
+    Ownable,
+    ERC2771Context
+{
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
@@ -74,7 +82,7 @@ contract SugarPretzels is ERC721, ERC721Enumerable, Ownable, ERC2771Context {
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721Enumerable)
+        override(ERC721, ERC721Enumerable, IChildMintableERC721)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
