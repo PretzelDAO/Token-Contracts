@@ -42,7 +42,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 module.exports = {
   solidity: {
-    version: "0.8.4",
+    version: "0.8.9",
     settings: {
       optimizer: {
         enabled: true,
@@ -66,6 +66,10 @@ module.exports = {
       url: getEthereumURL("goerli"),
       accounts: [process.env.PRIVATE_KEY]
     },
+    polygon: {
+      url: getPolygonURL("mainnet"),
+      accounts: [process.env.PRIVATE_KEY]
+    },
     mumbai: {
       url: getPolygonURL("mumbai"),
       accounts: [process.env.PRIVATE_KEY]
@@ -78,6 +82,7 @@ module.exports = {
       rinkeby: process.env.ETHERSCAN_API_KEY,
       goerli: process.env.ETHERSCAN_API_KEY,
       kovan: process.env.ETHERSCAN_API_KEY,
+      polygon: process.env.POLYGONSCAN_API_KEY,
       polygonMumbai: process.env.POLYGONSCAN_API_KEY,
     }
   }

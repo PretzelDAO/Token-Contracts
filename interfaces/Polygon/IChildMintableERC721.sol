@@ -158,6 +158,7 @@ abstract contract IChildMintableERC721 is AccessControl, ERC721 {
     function supportsInterface(bytes4 interfaceId)
         public
         view
+        virtual
         override(ERC721, AccessControl)
         returns (bool)
     {
