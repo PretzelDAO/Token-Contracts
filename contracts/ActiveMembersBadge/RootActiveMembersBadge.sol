@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 import "./BaseActiveMembersBadge.sol";
-import "../interfaces/IMintableERC721.sol";
+import "../../interfaces/IMintableERC721.sol";
 
 contract RootActiveMembersBadge is BaseActiveMembersBadge, IMintableERC721 {
     // Stuff needed for Polygon mintable assets
