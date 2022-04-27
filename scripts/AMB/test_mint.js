@@ -14,25 +14,18 @@ async function main() {
 
     const leafNodes = allowList.map(addr => keccak256(addr));
     const merkleTree = new MerkleTree(leafNodes, keccak256, { sortPairs: true });
-    // const merkleRoot = merkleTree.getRoot();
-
     let merkleProof = merkleTree.getHexProof(keccak256(address));
 
 
     const Contract = await ethers.getContractFactory('ChildActiveMembersBadge');
+    const contract = Contract.attach('0x5C91fB77355573a66c9892200896025a7bA06BA9')
 
-    const contract = Contract.attach('0x2b98AD929Ee80d23902d27d1A9A9549D4b067448')
-
-    const tx = await contract.claim(merkleProof, {
-        gasLimit: 500000
-    })
+    const tx = await contract.claim(merkleProof)
     await tx.wait()
 
     console.log(await contract.balanceOf(address));
-
     console.log(await contract.tokenURI(1));
     // console.log(await contract.tokenURI(0));
-
 }
 
 
