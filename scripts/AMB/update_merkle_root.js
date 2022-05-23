@@ -14,13 +14,14 @@ async function main() {
     const leafNodes = allowList.map(addr => keccak256(addr));
     const merkleTree = new MerkleTree(leafNodes, keccak256, { sortPairs: true });
     const merkleRoot = merkleTree.getHexRoot();
-    console.log(`New Merkle Root is ${getHexRoot}`);
+    console.log(`New Merkle Root is ${merkleRoot}`);
 
     const Contract = await ethers.getContractFactory('ChildActiveMembersBadge');
     const contract = Contract.attach(CONTRACT_ADDRESS)
 
     console.log(`Setting Merkle Root`);
     const tx = await contract.setMerkleRoot(merkleRoot)
+    console.log(tx.hash);
     await tx.wait()
     console.log(`DONE`);
 }
