@@ -66,14 +66,18 @@ module.exports = {
       url: getEthereumURL("goerli"),
       accounts: [process.env.PRIVATE_KEY]
     },
-    polygon: {
-      url: getPolygonURL("mainnet"),
+    kovan: {
+      url: getEthereumURL("kovan"),
       accounts: [process.env.PRIVATE_KEY]
     },
-    mumbai: {
-      url: getPolygonURL("mumbai"),
-      accounts: [process.env.PRIVATE_KEY]
-    },
+    // polygon: {
+    //   url: getPolygonURL("mainnet"),
+    //   accounts: [process.env.PRIVATE_KEY]
+    // },
+    // mumbai: {
+    //   url: getPolygonURL("mumbai"),
+    //   accounts: [process.env.PRIVATE_KEY]
+    // },
   },
   etherscan: {
     apiKey: {

@@ -4,22 +4,13 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
-contract SugarPretzels is
-    ERC721,
-    ERC721Enumerable,
-    ChainlinkClient,
-    VRFConsumerBaseV2,
-    ERC2771Context,
-    Ownable
-{
-    using Counters for Counters.Counter;
+contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
     using Chainlink for Chainlink.Request;
 
     struct LocationResult {
@@ -42,12 +33,15 @@ contract SugarPretzels is
         uint8 weatherIcon;
     }
 
+    int16 public constant temperatureConversionConstant = 10;
+    uint24 public constant precipitationConversionConstant = 100;
+
     struct Coordinates {
         string lat;
         string long;
     }
 
-    enum Icing {
+    enum Coating {
         None,
         Brown,
         White
@@ -58,12 +52,15 @@ contract SugarPretzels is
         StripesWhite,
         StripesBrown,
         StripesRainbow,
+        StripesPretzelDAO,
         SprinklesWhite,
         SprinklesBrown,
         SprinklesRainbow,
-        DotWhite,
-        DotBrown,
-        DotRainbow
+        SprinklesPretzelDAO,
+        DotsWhite,
+        DotsBrown,
+        DotsRainbow,
+        DotsPretzelDAO
     }
 
     struct Pretzel {
@@ -71,69 +68,53 @@ contract SugarPretzels is
         bool half;
         bool salt;
         // uint256 body; // 2 bodies
-        Icing icing;
+        Coating icing;
         Topping topping;
     }
 
     CurrentConditionsResult public currentConditions;
     LocationResult public locationInfo;
-    Counters.Counter private _tokenIdCounter;
     string public baseURI = "";
-    mapping(address => bool) public hasMinted;
+
+    // The tokenId of the next token to be minted.
+    uint256 private _currentIndex;
+    uint256 private _startTokenId = 1;
+
+    mapping(address => bool) public hasMintedGaseless;
+    uint256 public updateFrequency = 0.5 days;
 
     bytes32 public locationConditionsJobId = "7c276986e23b4b1c990d8659bca7a9d0";
-    uint256 public paymentAmount = 0.1 ether;
+    uint256 private paymentAmount = 0.1 ether;
     Coordinates public hausDerKunstLocation =
         Coordinates("48.144043846779574", "11.585822689487678");
     uint256 public lastUpdate = 0;
 
-    VRFCoordinatorV2Interface COORDINATOR;
-    // Your subscription ID.
-    uint64 s_subscriptionId;
-
-    // Rinkeby coordinator. For other networks,
-    // see https://docs.chain.link/docs/vrf-contracts/#configurations
-    address vrfCoordinator = 0x6168499c0cFfCaCD319c818142124B7A15E857ab;
-
-    // The gas lane to use, which specifies the maximum gas price to bump to.
-    // For a list of available gas lanes on each network,
-    // see https://docs.chain.link/docs/vrf-contracts/#configurations
-    bytes32 keyHash =
-        0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc;
-
-    // Depends on the number of requested values that you want sent to the
-    // fulfillRandomWords() function. Storing each word costs about 20,000 gas,
-    // so 100,000 is a safe default for this example contract. Test and adjust
-    // this limit based on the network that you select, the size of the request,
-    // and the processing of the callback request in the fulfillRandomWords()
-    // function.
-    uint32 callbackGasLimit = 100000;
-
-    // The default is 3, but you can set this higher.
-    uint16 requestConfirmations = 3;
-
-    // For this example, retrieve 2 random values in one request.
-    // Cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS.
-    uint32 numWords = 4;
-
-    mapping(uint256 => address) public minterIds;
     mapping(uint256 => Pretzel) public pretzelData;
+    uint256 immutable NUM_WORDS = 4;
+
+    address private _trustedForwarder;
 
     constructor(
         address trustedForwarder,
         address _link,
-        address _oracle,
-        uint64 subscriptionId
-    )
-        ERC721("SugarPretzels", "SPS")
-        VRFConsumerBaseV2(vrfCoordinator)
-        ERC2771Context(trustedForwarder)
-    {
+        address _oracle
+    ) ERC721("SugarPretzels", "SPS") ERC2771Context(trustedForwarder) {
+        _trustedForwarder = trustedForwarder;
         setChainlinkToken(_link);
         setChainlinkOracle(_oracle);
+        _currentIndex = _startTokenId;
+    }
 
-        COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
-        s_subscriptionId = subscriptionId;
+    function setUpdateFrequency(uint256 delta) external onlyOwner {
+        updateFrequency = delta;
+    }
+
+    function totalSupply() public view returns (uint256) {
+        // Counter underflow is impossible as _burnCounter cannot be incremented
+        // more than _currentIndex - _startTokenId() times
+        unchecked {
+            return _currentIndex - _startTokenId;
+        }
     }
 
     /**
@@ -141,8 +122,8 @@ contract SugarPretzels is
      */
     function requestLocationCurrentConditions() public {
         require(
-            block.timestamp - lastUpdate >= 1 days,
-            "Weather conditions can only be updated every 24h."
+            block.timestamp - lastUpdate >= updateFrequency,
+            "Weather conditions can only be updated every $updateFrequency."
         );
         lastUpdate = block.timestamp;
 
@@ -155,7 +136,7 @@ contract SugarPretzels is
         req.add("endpoint", "location-current-conditions"); // NB: not required if it has been hardcoded in the job spec
         req.add("lat", hausDerKunstLocation.lat);
         req.add("lon", hausDerKunstLocation.long);
-        req.add("units", "metrics");
+        req.add("units", "metric");
 
         sendChainlinkRequest(req, paymentAmount);
     }
@@ -181,69 +162,45 @@ contract SugarPretzels is
         }
     }
 
-    // Assumes the subscription is funded sufficiently.
-    function requestRandomWords() private returns (uint256) {
-        // Will revert if subscription is not set and funded.
-        return
-            COORDINATOR.requestRandomWords(
-                keyHash,
-                s_subscriptionId,
-                requestConfirmations,
-                callbackGasLimit,
-                numWords
-            );
-    }
-
-    function fulfillRandomWords(
-        uint256 requestId, /* requestId */
-        uint256[] memory randomWords
-    ) internal override {
-        address minter = minterIds[requestId];
-
-        require(!hasMinted[minter], "Only one mint per wallet is allowed.");
-
-        handleMint(minter, generatePretzel(randomWords));
-    }
-
     function generatePretzel(uint256[] memory randomWords)
-        public
-        pure
+        private
+        view
         returns (Pretzel memory)
     {
-        int16 temp = 255; //currentConditions.temperature;
-        uint24 precipitation = 2000; //currentConditions.precipitationPast12Hours;
+        int16 temp = currentConditions.temperature;
+        uint24 precipitation = currentConditions.precipitationPast12Hours;
         uint8 tempIdx = 3;
         uint8 precipitationIdx = 3;
 
         if (temp <= 0) {
             tempIdx = 0;
-        } else if (temp < 15 * 10**1) {
+        } else if (temp < 15 * temperatureConversionConstant) {
             tempIdx = 1;
-        } else if (temp < 30 * 10**1) {
+        } else if (temp < 30 * temperatureConversionConstant) {
             tempIdx = 2;
         }
 
         if (precipitation == 0) {
             precipitationIdx = 0;
-        } else if (precipitation < 25 * 10**2) {
+        } else if (precipitation < 25 * precipitationConversionConstant) {
             precipitationIdx = 1;
-        } else if (precipitation < 75 * 10**2) {
+        } else if (precipitation < 75 * precipitationConversionConstant) {
             precipitationIdx = 2;
         }
 
         uint8 background = precipitationIdx + tempIdx * 4;
 
         bool half = (randomWords[0] % 2) != 1;
-        bool salt = (randomWords[1] % 2) != 1;
+        bool salt = (randomWords[1] % 10) == 9;
 
         if (salt && !half) {
-            return Pretzel(background, half, salt, Icing.None, Topping.None);
+            return Pretzel(background, half, salt, Coating.None, Topping.None);
         }
 
-        Icing icing = Icing(randomWords[2] % 3);
+        Coating icing = Coating(randomWords[2] % 3); // 3 = #Coatings
         Topping topping = Topping.None;
-        if (icing != Icing.None) {
-            topping = Topping(randomWords[3] % 10);
+        if (icing != Coating.None) {
+            topping = Topping(randomWords[3] % 13); // 13 = #Toppings
         }
         return Pretzel(background, half, salt, icing, topping);
     }
@@ -278,6 +235,13 @@ contract SugarPretzels is
         setChainlinkOracle(_oracle);
     }
 
+    function setLocationConditionsJobId(bytes32 _locationConditionsJobId)
+        external
+        onlyOwner
+    {
+        locationConditionsJobId = _locationConditionsJobId;
+    }
+
     function withdrawLink() public onlyOwner {
         LinkTokenInterface linkToken = LinkTokenInterface(
             chainlinkTokenAddress()
@@ -290,23 +254,69 @@ contract SugarPretzels is
 
     // =============================================
 
-    function mint() external {
-        require(
-            !hasMinted[_msgSender()],
-            "Only one mint per wallet is allowed."
+    function getRandomWords(address to)
+        private
+        view
+        returns (uint256[] memory)
+    {
+        uint256[] memory randomWords = new uint256[](4);
+
+        randomWords[0] = uint256(
+            keccak256(
+                abi.encode(
+                    to,
+                    tx.gasprice,
+                    block.number,
+                    block.timestamp,
+                    block.difficulty,
+                    blockhash(block.number - 1),
+                    address(this),
+                    totalSupply()
+                )
+            )
         );
-        minterIds[requestRandomWords()] = _msgSender();
+
+        for (uint256 i = 1; i < NUM_WORDS; i++) {
+            randomWords[i] = uint256(keccak256(abi.encode(randomWords[i - 1])));
+        }
+
+        return randomWords;
     }
 
-    function handleMint(address minter, Pretzel memory pretzel) private {
-        _tokenIdCounter.increment();
-        uint256 tokenId = _tokenIdCounter.current();
+    function mintWithoutGas() external {
+        require(
+            super.isTrustedForwarder(msg.sender),
+            "Gasless minting is only possible via OpenGSN."
+        );
+        require(
+            !hasMintedGaseless[_msgSender()],
+            "Maximum number of gasless mints reached."
+        );
+        hasMintedGaseless[_msgSender()] = true;
+
+        handleMint(_msgSender(), getRandomWords(_msgSender()));
+    }
+
+    function mint() external {
+        require(
+            _msgSender() == tx.origin,
+            "Contracts are not allowed to mint."
+        );
+
+        handleMint(_msgSender(), getRandomWords(_msgSender()));
+    }
+
+    function handleMint(address minter, uint256[] memory randomWords) private {
+        uint256 tokenId = _currentIndex;
+        unchecked {
+            _currentIndex++;
+        }
+
+        Pretzel memory pretzel = generatePretzel(randomWords);
+        pretzelData[tokenId] = pretzel;
 
         // interactions
         _safeMint(minter, tokenId);
-        pretzelData[tokenId] = pretzel;
-
-        hasMinted[minter] = true;
     }
 
     function setBaseURI(string calldata uri) external onlyOwner {
@@ -337,22 +347,5 @@ contract SugarPretzels is
         returns (bytes calldata)
     {
         return ERC2771Context._msgData();
-    }
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal override(ERC721, ERC721Enumerable) {
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721Enumerable)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
     }
 }
