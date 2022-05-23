@@ -42,13 +42,12 @@ contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
     }
 
     enum Coating {
-        None,
         Brown,
-        White
+        White,
+        None
     }
 
     enum Topping {
-        None,
         StripesWhite,
         StripesBrown,
         StripesRainbow,
@@ -60,7 +59,8 @@ contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
         DotsWhite,
         DotsBrown,
         DotsRainbow,
-        DotsPretzelDAO
+        DotsPretzelDAO,
+        None
     }
 
     struct Pretzel {
@@ -68,7 +68,7 @@ contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
         bool half;
         bool salt;
         // uint256 body; // 2 bodies
-        Coating icing;
+        Coating coating;
         Topping topping;
     }
 
@@ -191,18 +191,23 @@ contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
         uint8 background = precipitationIdx + tempIdx * 4;
 
         bool half = (randomWords[0] % 2) != 1;
-        bool salt = (randomWords[1] % 10) == 9;
+        // 10% chance to get a salty pretzel
+        bool salt = (randomWords[1] % 10) == 0;
 
         if (salt && !half) {
             return Pretzel(background, half, salt, Coating.None, Topping.None);
         }
 
-        Coating icing = Coating(randomWords[2] % 3); // 3 = #Coatings
-        Topping topping = Topping.None;
-        if (icing != Coating.None) {
-            topping = Topping(randomWords[3] % 13); // 13 = #Toppings
+        // 90% chance to get a coating
+        bool hasCoating = (randomWords[2] % 10) > 0;
+        if (hasCoating) {
+            Coating coating = Coating(randomWords[2] % 2);
+            Topping topping = Topping(randomWords[3] % 13);
+            return Pretzel(background, half, salt, coating, topping);
+        } else {
+            // topping only works with coating
+            return Pretzel(background, half, salt, Coating.None, Topping.None);
         }
-        return Pretzel(background, half, salt, icing, topping);
     }
 
     /* ========== PRIVATE FUNCTIONS ========== */
