@@ -104,7 +104,7 @@ async function main() {
     await txObj.wait()
 
     // let's request an update from the oracle
-    txObj = await SugarPretzel.requestLocationCurrentConditions()
+    txObj = await sugarPretzel.requestLocationCurrentConditions()
     console.log('txHash updating location info', txObj.hash)
 
 }
