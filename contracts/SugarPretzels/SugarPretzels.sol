@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
-import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
-import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
 contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
     using Chainlink for Chainlink.Request;
@@ -92,14 +90,11 @@ contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
     mapping(uint256 => Pretzel) public pretzelData;
     uint256 immutable NUM_WORDS = 4;
 
-    address private _trustedForwarder;
-
     constructor(
         address trustedForwarder,
         address _link,
         address _oracle
     ) ERC721("SugarPretzels", "SPS") ERC2771Context(trustedForwarder) {
-        _trustedForwarder = trustedForwarder;
         setChainlinkToken(_link);
         setChainlinkOracle(_oracle);
         _currentIndex = _startTokenId;
