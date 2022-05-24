@@ -26,7 +26,7 @@ contract RandomPretzels is VRFConsumerBaseV2, BasePretzels {
     bytes32 keyHash =
         0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc;
 
-    uint32 callbackGasLimit = 300000;
+    uint32 callbackGasLimit = 500000;
 
     // The default is 3, but you can set this higher.
     uint16 requestConfirmations = 3;
