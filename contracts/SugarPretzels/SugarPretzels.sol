@@ -8,7 +8,7 @@ contract SugarPretzels is BasePretzels {
         address trustedForwarder,
         address _link,
         address _oracle
-    ) BasePretzels(trustedForwarder, _link, _oracle) {}
+    ) BasePretzels(trustedForwarder, _link, _oracle, "SugarPretzels", "SPS") {}
 
     // =============================================
 

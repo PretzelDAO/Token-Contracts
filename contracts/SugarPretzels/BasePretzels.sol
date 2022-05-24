@@ -102,8 +102,10 @@ abstract contract BasePretzels is
     constructor(
         address trustedForwarder,
         address _link,
-        address _oracle
-    ) ERC721("SugarPretzels", "SPS") ERC2771Context(trustedForwarder) {
+        address _oracle,
+        string memory name,
+        string memory symbol
+    ) ERC721(name, symbol) ERC2771Context(trustedForwarder) {
         setChainlinkToken(_link);
         setChainlinkOracle(_oracle);
         _currentIndex = _startTokenId;

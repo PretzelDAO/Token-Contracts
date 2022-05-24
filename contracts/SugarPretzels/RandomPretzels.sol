@@ -14,11 +14,11 @@ contract VRFv2SubscriptionManager is VRFConsumerBaseV2, BasePretzels {
 
     // Rinkeby coordinator. For other networks,
     // see https://docs.chain.link/docs/vrf-contracts/#configurations
-    address vrfCoordinator = 0x6168499c0cFfCaCD319c818142124B7A15E857ab;
+    // address vrfCoordinator = 0x6168499c0cFfCaCD319c818142124B7A15E857ab;
 
     // Rinkeby LINK token contract. For other networks, see
     // https://docs.chain.link/docs/vrf-contracts/#configurations
-    address link_token_contract = 0x01BE23585060835E02B77ef475b0Cc51aA1e0709;
+    // address link_token_contract = 0x01BE23585060835E02B77ef475b0Cc51aA1e0709;
 
     // The gas lane to use, which specifies the maximum gas price to bump to.
     // For a list of available gas lanes on each network,
@@ -42,13 +42,14 @@ contract VRFv2SubscriptionManager is VRFConsumerBaseV2, BasePretzels {
     constructor(
         address trustedForwarder,
         address _link,
-        address _oracle
+        address _oracle,
+        address vrfCoordinator
     )
         VRFConsumerBaseV2(vrfCoordinator)
-        BasePretzels(trustedForwarder, _link, _oracle)
+        BasePretzels(trustedForwarder, _link, _oracle, "RandomPretzels", "RPS")
     {
         COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
-        LINKTOKEN = LinkTokenInterface(link_token_contract);
+        LINKTOKEN = LinkTokenInterface(_link);
         //Create a new subscription when you deploy the contract.
         createNewSubscription();
     }
