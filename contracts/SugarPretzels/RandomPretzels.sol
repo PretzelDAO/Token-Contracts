@@ -8,7 +8,7 @@ import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
 import "./BasePretzels.sol";
 
-contract VRFv2SubscriptionManager is VRFConsumerBaseV2, BasePretzels {
+contract RandomPretzels is VRFConsumerBaseV2, BasePretzels {
     VRFCoordinatorV2Interface COORDINATOR;
     LinkTokenInterface LINKTOKEN;
 
@@ -108,11 +108,5 @@ contract VRFv2SubscriptionManager is VRFConsumerBaseV2, BasePretzels {
         // Cancel the subscription and send the remaining LINK to a wallet address.
         COORDINATOR.cancelSubscription(s_subscriptionId, receivingWallet);
         s_subscriptionId = 0;
-    }
-
-    // Transfer this contract's funds to an address.
-    // 1000000000000000000 = 1 LINK
-    function withdraw(uint256 amount, address to) external onlyOwner {
-        LINKTOKEN.transfer(to, amount);
     }
 }
