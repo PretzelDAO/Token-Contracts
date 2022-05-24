@@ -15,12 +15,12 @@ async function main() {
     // await hre.run('compile');
 
     // We get the contract to deploy
-    const Contract = await ethers.getContractFactory("GenesisPretzels");
+    const Contract = await ethers.getContractFactory("GenesisPretzel");
 
     const contract = await Contract.deploy();
 
     await contract.deployed();
-    console.log("GenesisPretzels deployed to:", contract.address);
+    console.log("GenesisPretzel deployed to:", contract.address);
 
 }
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
 import "erc721a/contracts/ERC721A.sol";
@@ -5,7 +6,7 @@ import "erc721a/contracts/ERC721A.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-contract GenesisPretzels is ERC721A, Ownable {
+contract GenesisPretzel is ERC721A, Ownable {
     using Strings for uint256;
 
     bool public revealed = false;
@@ -17,7 +18,7 @@ contract GenesisPretzels is ERC721A, Ownable {
     string private constant UNREVEALED_CID = "unrevealed";
     uint256 public constant MAX_SUPPLY = 30;
 
-    constructor() ERC721A("GenesisPretzels", "GPS") {}
+    constructor() ERC721A("GenesisPretzel", "GPRZL") {}
 
     function mint(uint256 quantity) external payable {
         require(

@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
-abstract contract BasePretzels is
+abstract contract BasePretzel is
     ERC721,
     ChainlinkClient,
     ERC2771Context,
@@ -95,7 +95,7 @@ abstract contract BasePretzels is
 
     // The tokenId of the next token to be minted.
     uint256 private _currentIndex;
-    uint256 private _startTokenId = 1;
+    uint256 private _startTokenId = 0;
 
     mapping(address => bool) public hasMintedGasless;
 

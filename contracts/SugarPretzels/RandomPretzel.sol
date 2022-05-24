@@ -6,9 +6,9 @@ import "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
-import "./BasePretzels.sol";
+import "./BasePretzel.sol";
 
-contract RandomPretzels is VRFConsumerBaseV2, BasePretzels {
+contract RandomPretzel is VRFConsumerBaseV2, BasePretzel {
     VRFCoordinatorV2Interface COORDINATOR;
     LinkTokenInterface LINKTOKEN;
 
@@ -23,13 +23,13 @@ contract RandomPretzels is VRFConsumerBaseV2, BasePretzels {
     // The gas lane to use, which specifies the maximum gas price to bump to.
     // For a list of available gas lanes on each network,
     // see https://docs.chain.link/docs/vrf-contracts/#configurations
-    bytes32 keyHash =
-        0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc;
+    bytes32 private immutable _keyHash;
+    // 0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc
 
-    uint32 callbackGasLimit = 500000;
+    uint32 private _callbackGasLimit = 500000;
 
     // The default is 3, but you can set this higher.
-    uint16 requestConfirmations = 3;
+    uint16 private _requestConfirmations = 3;
 
     // For this example, retrieve 2 random values in one request.
     // Cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS.
@@ -43,13 +43,15 @@ contract RandomPretzels is VRFConsumerBaseV2, BasePretzels {
         address trustedForwarder,
         address _link,
         address _oracle,
-        address vrfCoordinator
+        address vrfCoordinator,
+        bytes32 keyHash
     )
         VRFConsumerBaseV2(vrfCoordinator)
-        BasePretzels(trustedForwarder, _link, _oracle, "RandomPretzels", "RPS")
+        BasePretzel(trustedForwarder, _link, _oracle, "RandomPretzel", "RPRZL")
     {
         COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
         LINKTOKEN = LinkTokenInterface(_link);
+        _keyHash = keyHash;
         //Create a new subscription when you deploy the contract.
         createNewSubscription();
     }
@@ -58,10 +60,10 @@ contract RandomPretzels is VRFConsumerBaseV2, BasePretzels {
     function mint() internal override {
         // Will revert if subscription is not set and funded.
         uint256 requestId = COORDINATOR.requestRandomWords(
-            keyHash,
+            _keyHash,
             s_subscriptionId,
-            requestConfirmations,
-            callbackGasLimit,
+            _requestConfirmations,
+            _callbackGasLimit,
             NUM_WORDS
         );
         idToMinter[requestId] = _msgSender();

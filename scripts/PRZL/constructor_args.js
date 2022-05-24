@@ -4,5 +4,5 @@ module.exports = [
     forwarder,
     linkToken,
     weatherOracle,
-    vrfCoordinator
+    // vrfCoordinator
 ]

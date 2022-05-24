@@ -4,19 +4,9 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 const { ethers } = require("hardhat");
+const { forwarder, linkToken, weatherOracle, relayHub } = require('./config')
 
-const TRUSTED_FORWARDERS = {
-    'polygon': '0xdA78a11FD57aF7be2eDD804840eA7f4c2A38801d',
-    'mumbai': '0x4d4581c01A457925410cd3877d17b2fd4553b2C5'
-}
-
-const RELAY_HUBS = {
-    'polygon': '0x6C28AfC105e65782D9Ea6F2cA68df84C9e7d750d',
-    'mumbai': '0x6646cD15d33cE3a6933e36de38990121e8ba2806'
-}
-
-const NETWORK = 'mumbai'
-const BASE_URI = 'http://metadata.pretzeldao.com:8080/sugarpretzels/nft/'
+const BASE_URI = 'https://metadata.pretzeldao.com/bakery/'
 
 async function main() {
     // Hardhat always runs the compile task when running scripts with its command
@@ -26,15 +16,12 @@ async function main() {
     // manually to make sure everything is compiled
     // await hre.run('compile');
 
-
     // We get the contract to deploy
-    const SugarPretzel = await ethers.getContractFactory("SugarPretzels");
-
-    // DEPLOY TOKEN CONTRACT WITH TRUSTED FORWARDING CONTRACT HERE
-    const trustedForwarder = TRUSTED_FORWARDERS[NETWORK]
-    const sugarPretzel = await SugarPretzel.deploy(trustedForwarder);
+    const SugarPretzel = await ethers.getContractFactory("SugarPretzel");
+    const sugarPretzel = await SugarPretzel.deploy(forwarder, linkToken, weatherOracle);
     await sugarPretzel.deployed();
     console.log("sugarPretzel deployed to:", sugarPretzel.address);
+
 
     // SET BASEURI
     const txURI = await sugarPretzel.setBaseURI(BASE_URI)
@@ -47,17 +34,16 @@ async function main() {
 
 
     //  SET RELAY HUB FOR PAYMASTER
-    const relayHub = RELAY_HUBS[NETWORK]
     let txObj = await paymaster.setRelayHub(relayHub)
     console.log('txHash set relayHub', txObj.hash)
 
     //  SET TRUSTED FORWARDER FOR PAYMASTER
-    txObj = await paymaster.setTrustedForwarder(trustedForwarder)
+    txObj = await paymaster.setTrustedForwarder(forwarder)
     console.log('txHash set trusted forwarder', txObj.hash)
 
 
-    const accounts = await ethers.getSigners();
-    const amountInEther = '0.01';
+    const signers = await ethers.getSigners();
+    const amountInEther = '0.005';
 
     // FUND THE PAYMASTER
     // WE NEED TO SET A CUSTOM GAS LIMIT
@@ -67,13 +53,34 @@ async function main() {
         to: paymaster.address,
         // Convert currency unit from ether to wei
         value: ethers.utils.parseEther(amountInEther),
-        gasLimit: ethers.utils.hexlify(300000), // 100000
+        gasLimit: ethers.utils.hexlify(100000),
         // gasPrice: ethers.utils.parseUnits('2', 'gwei')
     }
 
-    txObj = await accounts[0].sendTransaction(tx)
+    txObj = await signers[0].sendTransaction(tx)
     console.log('txHash fund paymaster / relayhub', txObj.hash)
 
+    const abi = [
+        // Read-Only Functions
+        "function balanceOf(address owner) view returns (uint256)",
+        "function decimals() view returns (uint8)",
+        "function symbol() view returns (string)",
+
+        // Authenticated Functions
+        "function transfer(address to, uint amount) returns (bool)",
+
+        // Events
+        "event Transfer(address indexed from, address indexed to, uint amount)"
+    ];
+
+    const erc20 = new ethers.Contract(linkToken, abi, signers[0]);
+    txObj = await erc20.transfer(sugarPretzel.address, ethers.utils.parseEther('1'))
+    console.log('txHash LINK transfer', txObj.hash)
+    await txObj.wait()
+
+    // let's request an update from the oracle
+    txObj = await sugarPretzel.requestLocationCurrentConditions()
+    console.log('txHash updating location info', txObj.hash)
 
 }
 

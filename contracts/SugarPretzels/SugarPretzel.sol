@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "./BasePretzels.sol";
+import "./BasePretzel.sol";
 
-contract SugarPretzels is BasePretzels {
+contract SugarPretzel is BasePretzel {
     constructor(
         address trustedForwarder,
         address _link,
         address _oracle
-    ) BasePretzels(trustedForwarder, _link, _oracle, "SugarPretzels", "SPS") {}
-
-    // =============================================
+    ) BasePretzel(trustedForwarder, _link, _oracle, "SugarPretzel", "SPRZL") {}
 
     function getRandomWords(address to)
         private
