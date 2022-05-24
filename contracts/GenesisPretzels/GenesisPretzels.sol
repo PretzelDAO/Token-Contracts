@@ -1,9 +1,13 @@
 pragma solidity ^0.8.4;
 
 import "erc721a/contracts/ERC721A.sol";
+
 import "@openzeppelin/contracts/access/Ownable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract GenesisPretzels is ERC721A, Ownable {
+    using Strings for uint256;
+
     bool public revealed = false;
     uint256 public metadataOffset;
     uint256 public constant PRICE_PER_MINT = 0.1 ether;
@@ -53,7 +57,13 @@ contract GenesisPretzels is ERC721A, Ownable {
         if (!revealed) {
             return string(abi.encodePacked("ipfs://", UNREVEALED_CID));
         }
-        return string(abi.encodePacked(_baseURI(), tokenToMetadataId(tokenId)));
+        return
+            string(
+                abi.encodePacked(
+                    _baseURI(),
+                    tokenToMetadataId(tokenId).toString()
+                )
+            );
     }
 
     function tokenToMetadataId(uint256 tokenId) public view returns (uint256) {
@@ -70,6 +80,11 @@ contract GenesisPretzels is ERC721A, Ownable {
     }
 
     function getRandomOffset() private view returns (uint256) {
+        require(
+            tx.origin == msg.sender,
+            "Contracts are not allowed to reveal."
+        );
+
         uint256 randomWord = uint256(
             keccak256(
                 abi.encode(
@@ -86,7 +101,7 @@ contract GenesisPretzels is ERC721A, Ownable {
         return randomWord % MAX_SUPPLY;
     }
 
-    function withdraw() external payable onlyOwner {
+    function withdraw() external onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
     }
 }
