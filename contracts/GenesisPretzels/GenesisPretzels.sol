@@ -94,7 +94,7 @@ contract GenesisPretzels is ERC721A, Ownable {
                     block.difficulty,
                     blockhash(block.number - 1),
                     address(this),
-                    totalSupply()
+                    _totalMinted()
                 )
             )
         );
