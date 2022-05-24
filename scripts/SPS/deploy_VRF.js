@@ -4,7 +4,7 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 const { ethers } = require("hardhat");
-const { forwarder, linkToken, weatherOracle, relayHub } = require('./config')
+const { forwarder, linkToken, weatherOracle, relayHub, vrfCoordinator } = require('./config')
 
 
 
@@ -21,17 +21,17 @@ async function main() {
     // await hre.run('compile');
 
     // We get the contract to deploy
-    const SugarPretzel = await ethers.getContractFactory("SugarPretzels");
-    const sugarPretzel = await SugarPretzel.deploy(forwarder, linkToken, weatherOracle);
-    await sugarPretzel.deployed();
-    console.log("sugarPretzel deployed to:", sugarPretzel.address);
+    const RandomPretzel = await ethers.getContractFactory("RandomPretzels");
+    const randomPretzel = await RandomPretzel.deploy(forwarder, linkToken, weatherOracle, vrfCoordinator);
+    await randomPretzel.deployed();
+    console.log("randomPretzel deployed to:", randomPretzel.address);
 
 
     // SET BASEURI
-    // const txURI = await sugarPretzel.setBaseURI(BASE_URI)
+    // const txURI = await randomPretzel.setBaseURI(BASE_URI)
     // console.log('tx URI hash:', txURI.hash);
 
-    const addr = sugarPretzel.address
+    const addr = randomPretzel.address
     const Paymaster = await ethers.getContractFactory("SingleRecipientPaymaster");
     const paymaster = await Paymaster.deploy(addr);
     console.log("Paymaster deployed to:", paymaster.address);
@@ -87,12 +87,12 @@ async function main() {
     // - Estimating Gas for non-constant (as an anonymous sender)
     // - Static Calling non-constant methods (as anonymous sender)
     const erc20 = new ethers.Contract(linkToken, abi, signers[0]);
-    txObj = await erc20.transfer(sugarPretzel.address, ethers.utils.parseEther('1'))
+    txObj = await erc20.transfer(randomPretzel.address, ethers.utils.parseEther('1'))
     console.log('txHash LINK transfer', txObj.hash)
     await txObj.wait()
 
     // let's request an update from the oracle
-    txObj = await sugarPretzel.requestLocationCurrentConditions()
+    txObj = await randomPretzel.requestLocationCurrentConditions()
     console.log('txHash updating location info', txObj.hash)
 
 }
