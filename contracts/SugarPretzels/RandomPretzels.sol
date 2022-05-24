@@ -85,11 +85,10 @@ contract RandomPretzels is VRFConsumerBaseV2, BasePretzels {
     }
 
     // Assumes this contract owns link.
-    // 1000000000000000000 = 1 LINK
     function topUpSubscription(uint256 amount) external onlyOwner {
         LINKTOKEN.transferAndCall(
             address(COORDINATOR),
-            amount,
+            amount * 1 ether,
             abi.encode(s_subscriptionId)
         );
     }
