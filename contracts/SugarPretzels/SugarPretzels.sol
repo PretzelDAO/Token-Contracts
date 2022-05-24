@@ -78,7 +78,7 @@ contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
     uint256 private _currentIndex;
     uint256 private _startTokenId = 1;
 
-    mapping(address => bool) public hasMintedGaseless;
+    mapping(address => bool) public hasMintedGasless;
     uint256 public updateFrequency = 0.5 days;
 
     bytes32 public locationConditionsJobId = "7c276986e23b4b1c990d8659bca7a9d0";
@@ -276,8 +276,11 @@ contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
             )
         );
 
-        for (uint256 i = 1; i < NUM_WORDS; i++) {
+        for (uint256 i = 1; i < NUM_WORDS; ) {
             randomWords[i] = uint256(keccak256(abi.encode(randomWords[i - 1])));
+            unchecked {
+                ++i;
+            }
         }
 
         return randomWords;
@@ -289,10 +292,10 @@ contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
             "Gasless minting is only possible via OpenGSN."
         );
         require(
-            !hasMintedGaseless[_msgSender()],
+            !hasMintedGasless[_msgSender()],
             "Maximum number of gasless mints reached."
         );
-        hasMintedGaseless[_msgSender()] = true;
+        hasMintedGasless[_msgSender()] = true;
 
         handleMint(_msgSender(), getRandomWords(_msgSender()));
     }
@@ -309,7 +312,7 @@ contract SugarPretzels is ERC721, ChainlinkClient, ERC2771Context, Ownable {
     function handleMint(address minter, uint256[] memory randomWords) private {
         uint256 tokenId = _currentIndex;
         unchecked {
-            _currentIndex++;
+            ++_currentIndex;
         }
 
         Pretzel memory pretzel = generatePretzel(randomWords);
