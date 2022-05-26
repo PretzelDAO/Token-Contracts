@@ -58,12 +58,13 @@ abstract contract BasePretzel is
 
     // =========== Pretzel Generation Vars ================
     enum Coating {
+        None,
         Brown,
-        White,
-        None
+        White
     }
 
     enum Topping {
+        None,
         StripesWhite,
         StripesBrown,
         StripesRainbow,
@@ -75,8 +76,7 @@ abstract contract BasePretzel is
         DotsWhite,
         DotsBrown,
         DotsRainbow,
-        DotsPretzelDAO,
-        None
+        DotsPretzelDAO
     }
 
     struct Pretzel {
@@ -254,9 +254,9 @@ abstract contract BasePretzel is
 
         if (precipitation == 0) {
             precipitationIdx = 0;
-        } else if (precipitation < 25 * precipitationConversionConstant) {
+        } else if (precipitation < 5 * precipitationConversionConstant) {
             precipitationIdx = 1;
-        } else if (precipitation < 75 * precipitationConversionConstant) {
+        } else if (precipitation < 15 * precipitationConversionConstant) {
             precipitationIdx = 2;
         }
 
@@ -271,9 +271,9 @@ abstract contract BasePretzel is
         }
 
         // 90% chance to get a coating
-        bool hasCoating = (randomWords[2] % 10) > 0;
+        bool hasCoating = (randomWords[2] % 20) > 0;
         if (hasCoating) {
-            Coating coating = Coating(randomWords[2] % 2);
+            Coating coating = Coating((randomWords[2] % 2) + 1);
             Topping topping = Topping(randomWords[3] % 13);
             return Pretzel(background, half, salt, coating, topping);
         } else {
