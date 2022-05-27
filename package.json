@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "dotenv": "^14.3.2",
-    "erc721a": "^3.3.0",
+    "erc721a": "^4.0.0",
     "nft.storage": "^5.2.2"
   },
   "prettier": {
