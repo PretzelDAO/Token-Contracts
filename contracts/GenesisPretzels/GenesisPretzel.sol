@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "erc721a/contracts/ERC721A.sol";
+import 'erc721a/contracts/ERC721A.sol';
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import '@openzeppelin/contracts/access/Ownable.sol';
+import {Strings} from '@openzeppelin/contracts/utils/Strings.sol';
 
 contract GenesisPretzel is ERC721A, Ownable {
     using Strings for uint256;
@@ -13,27 +13,23 @@ contract GenesisPretzel is ERC721A, Ownable {
     bool public forSale = false;
     uint256 public metadataOffset;
     uint256 public constant PRICE_PER_MINT = 0.1 ether;
-    uint256 public constant MAX_MINT_PER_TX = 5;
 
     string private metadataCID;
-    string private unrevealedCID;
+    string private unrevealedCID =
+        'bafkreifgoa2jam7kryumpkmqeaatx7e5nz6cwoj3a5huvxhcfl4zx46vhy';
     uint256 public constant MAX_SUPPLY = 30;
 
-    constructor() ERC721A("GenesisPretzel", "GPRZL") {}
+    constructor() ERC721A('GenesisPretzel', 'GPRZL') {}
 
     function mint(uint256 quantity) external payable {
-        require(forSale, "Genesis Pretzels are not for sale right now :(");
+        require(forSale, 'Genesis Pretzels are not for sale right now.');
         require(
             _totalMinted() + quantity <= MAX_SUPPLY,
-            "Trying to mint too many tokens."
-        );
-        require(
-            quantity <= MAX_MINT_PER_TX,
-            "Trying to mint too many tokens in one transaction."
+            'Trying to mint too many tokens.'
         );
         require(
             msg.value >= quantity * PRICE_PER_MINT,
-            "Not enough ether send to complete purchase"
+            'Not enough ether send to complete purchase.'
         );
         _safeMint(msg.sender, quantity);
     }
@@ -48,7 +44,7 @@ contract GenesisPretzel is ERC721A, Ownable {
      * by default, can be overriden in child contracts.
      */
     function _baseURI() internal view override returns (string memory) {
-        return string(abi.encodePacked("ipfs://", metadataCID, "/"));
+        return string(abi.encodePacked('ipfs://', metadataCID, '/'));
     }
 
     /**
@@ -62,7 +58,7 @@ contract GenesisPretzel is ERC721A, Ownable {
     {
         if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
         if (!revealed) {
-            return string(abi.encodePacked("ipfs://", unrevealedCID));
+            return string(abi.encodePacked('ipfs://', unrevealedCID));
         }
         return
             string(
@@ -74,20 +70,20 @@ contract GenesisPretzel is ERC721A, Ownable {
     }
 
     function tokenToMetadataId(uint256 tokenId) public view returns (uint256) {
-        require(revealed, "Metadata must be revealed first.");
+        require(revealed, 'Metadata must be revealed first.');
         unchecked {
             return ((tokenId + metadataOffset) % MAX_SUPPLY);
         }
     }
 
     function reveal() external onlyOwner {
-        require(!revealed, "Can only reveal once.");
+        require(!revealed, 'Can only reveal once.');
         revealed = true;
         metadataOffset = getRandomOffset();
     }
 
     function setMetadataCID(string memory _metadataCID) external onlyOwner {
-        require(!revealed, "Can only change the metadata if not yet revealed");
+        require(!revealed, 'Can only change the metadata if not yet revealed.');
         metadataCID = _metadataCID;
     }
 
@@ -98,7 +94,7 @@ contract GenesisPretzel is ERC721A, Ownable {
     function getRandomOffset() private view returns (uint256) {
         require(
             tx.origin == msg.sender,
-            "Contracts are not allowed to reveal."
+            'Contracts are not allowed to reveal.'
         );
 
         uint256 randomWord = uint256(
