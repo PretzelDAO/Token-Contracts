@@ -17,7 +17,8 @@ abstract contract BasePretzel is
     // =========== Weather Oracle Vars ================
     using Chainlink for Chainlink.Request;
 
-    bytes32 public locationConditionsJobId = "7c276986e23b4b1c990d8659bca7a9d0";
+    // this is for polygon
+    bytes32 public locationConditionsJobId = "aff730c192164929ba625c1f6e92f624";
     uint256 private paymentAmount = 0.1 ether;
 
     struct LocationResult {

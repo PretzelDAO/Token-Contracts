@@ -1,8 +1,13 @@
-const { forwarder, linkToken, weatherOracle, vrfCoordinator } = require('./config')
+const {
+  forwarder,
+  linkToken,
+  weatherOracle,
+  vrfCoordinator,
+} = require('./config')
 
 module.exports = [
-    forwarder,
-    linkToken,
-    weatherOracle,
-    // vrfCoordinator
+  forwarder,
+  linkToken,
+  weatherOracle,
+  // vrfCoordinator
 ]

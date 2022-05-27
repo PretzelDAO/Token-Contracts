@@ -17,5 +17,9 @@
     "dotenv": "^14.3.2",
     "erc721a": "^3.3.0",
     "nft.storage": "^5.2.2"
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true
   }
 }
