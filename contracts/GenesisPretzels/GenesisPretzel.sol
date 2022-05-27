@@ -10,17 +10,19 @@ contract GenesisPretzel is ERC721A, Ownable {
     using Strings for uint256;
 
     bool public revealed = false;
+    bool public forSale = false;
     uint256 public metadataOffset;
     uint256 public constant PRICE_PER_MINT = 0.1 ether;
     uint256 public constant MAX_MINT_PER_TX = 5;
 
-    string private constant METADATA_CID = "metadata";
-    string private constant UNREVEALED_CID = "unrevealed";
+    string private metadataCID;
+    string private unrevealedCID;
     uint256 public constant MAX_SUPPLY = 30;
 
     constructor() ERC721A("GenesisPretzel", "GPRZL") {}
 
     function mint(uint256 quantity) external payable {
+        require(forSale, "Genesis Pretzels are not for sale right now :(");
         require(
             _totalMinted() + quantity <= MAX_SUPPLY,
             "Trying to mint too many tokens."
@@ -36,13 +38,17 @@ contract GenesisPretzel is ERC721A, Ownable {
         _safeMint(msg.sender, quantity);
     }
 
+    function toggleSale() external onlyOwner {
+        forSale = !forSale;
+    }
+
     /**
      * @dev Base URI for computing {tokenURI}. If set, the resulting URI for each
      * token will be the concatenation of the `baseURI` and the `tokenId`. Empty
      * by default, can be overriden in child contracts.
      */
-    function _baseURI() internal pure override returns (string memory) {
-        return string(abi.encodePacked("ipfs://", METADATA_CID, "/"));
+    function _baseURI() internal view override returns (string memory) {
+        return string(abi.encodePacked("ipfs://", metadataCID, "/"));
     }
 
     /**
@@ -56,7 +62,7 @@ contract GenesisPretzel is ERC721A, Ownable {
     {
         if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
         if (!revealed) {
-            return string(abi.encodePacked("ipfs://", UNREVEALED_CID));
+            return string(abi.encodePacked("ipfs://", unrevealedCID));
         }
         return
             string(
@@ -78,6 +84,15 @@ contract GenesisPretzel is ERC721A, Ownable {
         require(!revealed, "Can only reveal once.");
         revealed = true;
         metadataOffset = getRandomOffset();
+    }
+
+    function setMetadataCID(string memory _metadataCID) external onlyOwner {
+        require(!revealed, "Can only change the metadata if not yet revealed");
+        metadataCID = _metadataCID;
+    }
+
+    function setUnrevealedCID(string memory _unrevealedCID) external onlyOwner {
+        unrevealedCID = _unrevealedCID;
     }
 
     function getRandomOffset() private view returns (uint256) {
