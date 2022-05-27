@@ -52,6 +52,17 @@ The repository for the Smart Contracts can be found [here](https://github.com/Pr
 - The weather data shall get updated every 12h by a ChainLink keeper
 - Sugar Pretzels is an open edition, free mint NFT collection
 
+## Metadata
+
+The metadata is generated and uploaded to IPFS via our backend service [here](https://github.com/PretzelDAO/Bakery-Metadata)
+
+### Specification
+
+- backend reads the abstract pretzel representation from the smart contract
+- generate image and metadata based on it
+- upload to IPFS
+- on request redirect to IPFS
+
 ## Our Beautiful Frontend
 
 Our bakery frontend can be found in this [repository](https://github.com/PretzelDAO/Bakery-Frontend). Below we've also listed some instructions on how to get started with that as well!
