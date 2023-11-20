@@ -13,7 +13,7 @@ contract ChildActiveMembersBadge is BaseActiveMembersBadge {
 
     // Stuff needed for Polygon mintable assets
 
-    bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
+    bytes32 public immutable DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
     mapping(uint256 => bool) public withdrawnTokens;
 
     // limit batching of tokens due to gas limit restrictions
@@ -68,16 +68,20 @@ contract ChildActiveMembersBadge is BaseActiveMembersBadge {
         } else {
             uint256[] memory tokenIds = abi.decode(depositData, (uint256[]));
             uint256 length = tokenIds.length;
-            for (uint256 i; i < length; i++) {
+            for (uint256 i; i < length;) {
                 withdrawnTokens[tokenIds[i]] = false;
                 _safeMint(user, tokenIds[i]);
+
+                unchecked {
+                    ++i;
+                }
             }
         }
     }
 
     /**
      * @notice called when user wants to withdraw token back to root chain
-     * @dev Should handle withraw by burning user's token.
+     * @dev Should handle withdraw by burning user's token.
      * Should set `withdrawnTokens` mapping to `true` for the tokenId being withdrawn
      * This transaction will be verified when exiting on root chain
      * @param tokenId tokenId to withdraw
@@ -129,7 +133,7 @@ contract ChildActiveMembersBadge is BaseActiveMembersBadge {
 
     /**
      * @notice called when user wants to withdraw token back to root chain with token URI
-     * @dev Should handle withraw by burning user's token.
+     * @dev Should handle withdraw by burning user's token.
      * Should set `withdrawnTokens` mapping to `true` for the tokenId being withdrawn
      * This transaction will be verified when exiting on root chain
      *
@@ -143,7 +147,7 @@ contract ChildActiveMembersBadge is BaseActiveMembersBadge {
         withdrawnTokens[tokenId] = true;
 
         // this is not needed because our metadata gets generated on the contract
-        // still I keep function for compatability
+        // still I keep function for compatibility
 
         // Encoding metadata associated with tokenId & emitting event
         emit TransferWithMetadata(
@@ -184,7 +188,7 @@ contract ChildActiveMembersBadge is BaseActiveMembersBadge {
 
     function claim(bytes32[] calldata _merkleProof) external {
         // normally the require would be needed for a child mitable token
-        // however here it's not needed due to the whitelist functionailty
+        // however here it's not needed due to the whitelist functionality
 
         // require(
         //     !withdrawnTokens[tokenId],
